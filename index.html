@@ -1,0 +1,1544 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Construtor de Escala de Coroinhas</title>
+<style>
+  :root{
+    --azul-mariano: #7a1f2b;
+    --azul-mariano-2: #a5303f;
+    --azul-claro: #faeee2;
+    --dourado: #c9a24b;
+    --dourado-claro: #f1e2b8;
+    --branco: #ffffff;
+    --texto: #1f2937;
+    --texto-suave: #5b6472;
+    --sombra: 0 10px 30px rgba(122,31,43,0.12);
+    --radius: 18px;
+    --bg-grad: linear-gradient(160deg, #fdf6ec 0%, #f7e8d8 45%, #fdf1e0 100%);
+    --card-bg: #ffffff;
+    --header-grad: linear-gradient(120deg, #4a0f18 0%, #7a1f2b 55%, #a5303f 100%);
+    --vermelho: #b3432f;
+  }
+  [data-theme="dark"]{
+    --azul-mariano: #e8a7ac;
+    --azul-mariano-2: #c97b83;
+    --azul-claro: #2b1c17;
+    --dourado: #e0c26e;
+    --dourado-claro: #3a3320;
+    --branco: #1c1210;
+    --texto: #eef2ff;
+    --texto-suave: #b7c0d4;
+    --sombra: 0 10px 30px rgba(0,0,0,0.45);
+    --bg-grad: linear-gradient(160deg, #170d0a 0%, #1f1310 50%, #150c09 100%);
+    --card-bg: #221512;
+    --header-grad: linear-gradient(120deg, #2b0c10 0%, #4a0f18 55%, #6b1a26 100%);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family: 'Georgia', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg-grad);
+    color: var(--texto);
+    min-height:100vh;
+    transition: background .4s ease, color .4s ease;
+    padding-bottom: 60px;
+  }
+
+  /* ---------- Cabeçalho ---------- */
+  header{
+    position:relative;
+    background: var(--header-grad);
+    color:#fff;
+    padding: 30px 20px 26px;
+    text-align:center;
+    box-shadow: var(--sombra);
+  }
+  header h1{ margin:0 0 4px; font-size: clamp(1.3rem,3.5vw,1.9rem); font-weight:600; }
+  header p{ margin:0; color: var(--dourado-claro); font-size:0.85rem; letter-spacing:1px; text-transform:uppercase; }
+  .toggle-tema{
+    position: fixed; top: 18px; right: 18px; z-index: 40;
+    background: rgba(255,255,255,0.15); border: 1.5px solid rgba(255,255,255,0.4);
+    color:#fff; width:40px; height:40px; border-radius:50%; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; backdrop-filter: blur(6px);
+  }
+  .toggle-tema svg{ width:18px; height:18px; }
+
+  /* ---------- Barra de ações / abas ---------- */
+  .barra-app{
+    max-width: 1100px; margin: -18px auto 0; padding: 0 16px;
+    position: relative; z-index: 5;
+  }
+  .abas{
+    display:flex; gap:8px; background: var(--card-bg); border-radius: 999px;
+    padding:6px; box-shadow: var(--sombra); max-width: 480px; margin: 0 auto 18px;
+    border: 1px solid rgba(201,162,75,0.25);
+  }
+  .aba-btn{
+    flex:1; border:none; background:transparent; padding:10px 14px; border-radius:999px;
+    cursor:pointer; font-size:0.88rem; font-weight:600; color: var(--texto-suave);
+    transition: all .2s;
+  }
+  .aba-btn.ativa{ background: var(--azul-mariano); color:#fff; }
+
+  .barra-acoes{
+    display:flex; flex-wrap:wrap; gap:10px; justify-content:center;
+    background: var(--card-bg); border-radius: var(--radius); padding: 16px;
+    box-shadow: var(--sombra); margin-bottom: 22px; border: 1px solid rgba(201,162,75,0.2);
+  }
+  .btn{
+    display:inline-flex; align-items:center; gap:7px; padding: 10px 16px; border-radius: 999px;
+    border:none; background: var(--azul-mariano); color:#fff; font-size:0.83rem; cursor:pointer;
+    font-weight:500; transition: transform .2s, box-shadow .2s;
+  }
+  .btn:hover{ transform: translateY(-2px); box-shadow: 0 6px 14px rgba(122,31,43,0.25); }
+  .btn.dourado{ background: linear-gradient(120deg, var(--dourado), #b8933f); color:#3a2c05; }
+  .btn.outline{ background:transparent; border:1.5px solid var(--azul-mariano-2); color: var(--azul-mariano-2); }
+  [data-theme="dark"] .btn.outline{ color: var(--azul-mariano); border-color: var(--azul-mariano); }
+  .btn.vermelho{ background: var(--vermelho); color:#fff; }
+  .btn.pequeno{ padding:6px 12px; font-size:0.76rem; }
+  input[type=file]{ display:none; }
+
+  main{ max-width: 1100px; margin: 0 auto; padding: 0 16px; }
+
+  /* ---------- Painel Editor ---------- */
+  #painelEditor{ display:none; }
+  #painelEditor.ativo{ display:block; }
+
+  .campo{ margin-bottom: 14px; }
+  .campo label{ display:block; font-size:0.78rem; font-weight:600; color: var(--texto-suave); margin-bottom:5px; text-transform:uppercase; letter-spacing:0.5px; }
+  .campo input[type=text], .campo input[type=date], .campo input[type=time], .campo textarea{
+    width:100%; padding:10px 13px; border-radius:10px; border:1.5px solid rgba(122,31,43,0.18);
+    background: var(--azul-claro); color: var(--texto); font-size:0.92rem; outline:none;
+  }
+  .campo input:focus, .campo textarea:focus{ border-color: var(--dourado); }
+  .linha-campos{ display:flex; gap:12px; flex-wrap:wrap; }
+  .linha-campos > .campo{ flex:1; min-width:160px; }
+
+  .card-cabecalho-editor{
+    background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--sombra);
+    padding: 20px; margin-bottom: 24px; border: 1px solid rgba(201,162,75,0.2);
+  }
+  .card-cabecalho-editor h3{ margin-top:0; color: var(--azul-mariano); font-size:1.05rem; }
+  .bloco-calendario-api{ border: 1.5px solid rgba(201,162,75,0.35); }
+  .dica-calendario{ font-size:0.82rem; color: var(--texto-suave); margin-top:-6px; margin-bottom:16px; line-height:1.5; }
+  .dica-calendario a{ color: var(--azul-mariano-2); }
+  #campoCodigoCalendario{ display:none; }
+  #campoCodigoCalendario.visivel{ display:block; }
+  .status-calendario{ margin-top:12px; font-size:0.85rem; color: var(--texto-suave); min-height:1.2em; }
+  .status-calendario.erro{ color: var(--vermelho); }
+  .status-calendario.sucesso{ color: #2e7d32; }
+  [data-theme="dark"] .status-calendario.sucesso{ color: #7fd68a; }
+
+  .bloco-igreja{
+    background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--sombra);
+    padding: 20px; margin-bottom: 22px; border: 1.5px solid rgba(201,162,75,0.3); position:relative;
+  }
+  .bloco-igreja::before{
+    content:""; position:absolute; top:0; left:0; right:0; height:4px; border-radius: var(--radius) var(--radius) 0 0;
+    background: linear-gradient(90deg, var(--azul-mariano), var(--dourado), var(--azul-mariano-2));
+  }
+  .cabecalho-igreja{ display:flex; gap:10px; align-items:flex-end; margin-bottom:16px; }
+  .cabecalho-igreja .campo{ flex:1; margin-bottom:0; }
+
+  .bloco-evento{
+    background: var(--azul-claro); border-radius: 14px; padding: 16px; margin-bottom: 14px;
+    border: 1px dashed rgba(201,162,75,0.4);
+  }
+  .cabecalho-evento{ display:flex; gap:10px; align-items:flex-end; margin-bottom:12px; flex-wrap:wrap; }
+  .cabecalho-evento .campo{ margin-bottom:0; }
+  .dia-semana-auto{ font-size:0.76rem; color: var(--azul-mariano-2); font-weight:700; padding: 10px 4px; white-space:nowrap; }
+
+  .bloco-horario{
+    background: var(--card-bg); border-radius: 10px; padding: 12px; margin-bottom: 10px;
+    border: 1px solid rgba(122,31,43,0.12);
+  }
+  .cabecalho-horario{ display:flex; gap:10px; align-items:center; margin-bottom:10px; flex-wrap:wrap; }
+  .cabecalho-horario .campo{ margin-bottom:0; }
+  .check-especial{ display:flex; align-items:center; gap:6px; font-size:0.82rem; color: var(--texto-suave); }
+
+  .linha-servidor{ display:flex; gap:8px; margin-bottom:8px; align-items:center; flex-wrap:wrap; }
+  .linha-servidor input{ flex:1; min-width:110px; padding:8px 10px; border-radius:8px; border:1.5px solid rgba(122,31,43,0.15); background:var(--branco); color:var(--texto); font-size:0.85rem; }
+
+  .btn-remover-x{
+    background: transparent; border:none; color: var(--vermelho); cursor:pointer; font-size:1rem;
+    width:26px; height:26px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+  }
+  .btn-remover-x:hover{ background: rgba(179,67,47,0.12); }
+
+  .vazio-aviso{ text-align:center; color: var(--texto-suave); padding: 30px; font-size:0.9rem; font-style:italic; }
+
+  /* ---------- Painel Pré-visualização (reaproveita estilo dos cards) ---------- */
+  #painelPreview{ display:none; }
+  #painelPreview.ativo{ display:block; }
+
+  /* ---------- Painel Contador ---------- */
+  #painelContador{ display:none; }
+  #painelContador.ativo{ display:block; }
+  .bloco-contador{
+    background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--sombra);
+    padding: 22px; border: 1px solid rgba(201,162,75,0.2);
+  }
+  .bloco-contador h3{ margin-top:0; color: var(--azul-mariano); font-size:1.1rem; }
+  .linha-contador{ margin-bottom: 16px; }
+  .linha-contador:last-child{ margin-bottom:0; }
+  .linha-contador-topo{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+  .nome-contador{ font-weight:600; flex:1; color: var(--texto); }
+  .qtd-contador{
+    font-weight:700; color: #6b5417; background: var(--dourado-claro);
+    font-size:0.8rem; padding:2px 10px; border-radius:999px; white-space:nowrap;
+  }
+  [data-theme="dark"] .qtd-contador{ color: #f1e2b8; }
+  .barra-fundo{ background: var(--azul-claro); height:10px; border-radius:999px; overflow:hidden; }
+  .barra-preenchida{
+    background: linear-gradient(90deg, var(--dourado), var(--azul-mariano-2));
+    height:100%; border-radius:999px; transition: width .5s ease;
+  }
+  .funcoes-contador{ color: var(--texto-suave); font-size:0.74rem; margin-top:4px; margin-left:34px; }
+  .top-podio{ display:flex; gap:10px; margin-bottom:22px; flex-wrap:wrap; }
+  .medalha{
+    flex:1; min-width:140px; text-align:center; padding:16px 10px; border-radius:14px;
+    background: var(--azul-claro); border:1.5px solid rgba(201,162,75,0.3);
+  }
+  .medalha .num{ font-size:1.7rem; font-weight:800; color: var(--dourado); }
+  .medalha .nm{ font-weight:600; font-size:0.85rem; margin-top:2px; }
+  .medalha .qt{ font-size:0.75rem; color: var(--texto-suave); }
+
+  .painel-controles{
+    background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--sombra);
+    padding: 18px; margin-bottom: 22px; border: 1px solid rgba(201,162,75,0.25);
+  }
+  .linha-controles{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+  .campo-busca{ flex:1 1 220px; position:relative; }
+  .campo-busca input{ width:100%; padding:11px 14px 11px 38px; border-radius:999px; border:1.5px solid rgba(122,31,43,0.18); background:var(--azul-claro); color:var(--texto); font-size:0.9rem; outline:none; }
+  .campo-busca .icone-busca{ position:absolute; left:12px; top:50%; transform:translateY(-50%); width:16px; height:16px; opacity:0.55; }
+  select{ padding:10px 12px; border-radius:999px; border:1.5px solid rgba(122,31,43,0.18); background:var(--azul-claro); color:var(--texto); font-size:0.85rem; cursor:pointer; outline:none; }
+  .contagem-resultados{ text-align:center; color: var(--texto-suave); font-size:0.82rem; margin-top:12px; }
+
+  .titulo-preview-header{ text-align:center; margin-bottom: 20px; }
+  .titulo-preview-header .subtitulo{ font-size:0.8rem; letter-spacing:2.5px; text-transform:uppercase; color: var(--dourado); }
+  .titulo-preview-header h2{ margin:4px 0; color: var(--azul-mariano); font-size:1.5rem; }
+  .titulo-preview-header .mesano{ color: var(--texto-suave); font-size:1rem; }
+  .titulo-preview-header .versiculo{ font-style:italic; color: var(--texto-suave); font-size:0.85rem; max-width:520px; margin:8px auto 0; }
+
+  .bloco-local{ margin-bottom: 40px; }
+  .titulo-local{ display:flex; align-items:center; gap:12px; margin: 26px 0 18px; }
+  .titulo-local h2{ font-size:1.15rem; color: var(--azul-mariano); margin:0; font-weight:600; }
+  .titulo-local .icone-igreja{ width:22px; height:22px; flex-shrink:0; color: var(--dourado); }
+  .titulo-local::after{ content:""; flex:1; height:1px; background: linear-gradient(90deg, rgba(201,162,75,0.5), transparent); }
+
+  .grade-cards{ display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:18px; }
+
+  .card{
+    background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--sombra);
+    padding: 20px; border: 1px solid rgba(201,162,75,0.18); position:relative; overflow:hidden;
+  }
+  .card::before{ content:""; position:absolute; top:0; left:0; right:0; height:4px; background: linear-gradient(90deg, var(--azul-mariano), var(--dourado), var(--azul-mariano-2)); }
+  .card-data{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
+  .card-data .dia-mes{ font-size:1.5rem; font-weight:700; color: var(--azul-mariano); line-height:1; }
+  .card-data .dia-semana{ display:block; font-size:0.68rem; text-transform:uppercase; letter-spacing:1.4px; color: var(--dourado); margin-top:4px; font-weight:600; }
+  .selo-mes{ font-size:0.65rem; color: var(--texto-suave); background: var(--azul-claro); padding:4px 9px; border-radius:999px; white-space:nowrap; }
+  .celebracao{ font-size:0.82rem; color: var(--texto-suave); font-style:italic; margin-bottom:12px; padding-bottom:10px; border-bottom:1px dashed rgba(201,162,75,0.35); }
+  .horario-item{ margin-bottom:12px; }
+  .horario-item:last-child{ margin-bottom:0; }
+  .horario-cabecalho{ display:flex; align-items:center; gap:8px; margin-bottom:7px; }
+  .badge-hora{ background: var(--azul-mariano); color:#fff; font-weight:700; font-size:0.8rem; padding:4px 11px; border-radius:999px; }
+  .lista-servidores{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:5px; }
+  .lista-servidores li{ display:flex; align-items:center; gap:8px; font-size:0.84rem; padding:5px 9px; background: var(--azul-claro); border-radius:9px; }
+  .avatar-inicial{ width:22px; height:22px; border-radius:50%; background: linear-gradient(135deg, var(--dourado), var(--azul-mariano-2)); color:#fff; display:flex; align-items:center; justify-content:center; font-size:0.66rem; font-weight:700; flex-shrink:0; }
+  .nome-servidor{ font-weight:600; color: var(--texto); }
+  .funcao-servidor{ color: var(--texto-suave); font-size:0.73rem; }
+  .a-definir .avatar-inicial{ background:#b0b8c4; }
+  .a-definir .nome-servidor{ color: var(--texto-suave); font-style:italic; font-weight:500; }
+  .evento-especial{ background: var(--dourado-claro); color:#6b5417; padding:9px 11px; border-radius:9px; font-size:0.82rem; font-weight:600; text-align:center; }
+  [data-theme="dark"] .evento-especial{ color:#e9d48f; }
+  .card.oculto{ display:none; }
+  .destaque{ background: rgba(201,162,75,0.35); border-radius:3px; padding:0 2px; }
+
+  @media print{
+    .toggle-tema, .barra-app, header{ display:none !important; }
+    body{ background:#fff !important; }
+    #painelEditor{ display:none !important; }
+    #painelContador{ display:none !important; }
+    #painelPreview{ display:block !important; }
+    .painel-controles{ display:none !important; }
+    .card{ box-shadow:none; border:1px solid #ccc; break-inside: avoid; }
+    .grade-cards{ grid-template-columns: repeat(2,1fr); }
+  }
+  @media (max-width:560px){
+    .grade-cards{ grid-template-columns:1fr; }
+    .linha-controles{ flex-direction:column; align-items:stretch; }
+  }
+</style>
+</head>
+<body data-theme="light">
+
+<button class="toggle-tema" id="btnTema" title="Alternar tema">
+  <svg id="iconeTema" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-5.4-5.4c0-1.81.91-3.4 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>
+</button>
+
+<header>
+  <h1>✦ Construtor de Escala de Coroinhas ✦</h1>
+  <p>Monte sua escala e exporte uma página pronta, sob a proteção de São Tarcísio</p>
+</header>
+
+<div class="barra-app">
+  <div class="abas">
+    <button class="aba-btn ativa" id="abaEditorBtn">✏️ Editar</button>
+    <button class="aba-btn" id="abaPreviewBtn">👁️ Pré-visualizar</button>
+    <button class="aba-btn" id="abaContadorBtn">📊 Contador</button>
+  </div>
+
+  <div class="barra-acoes">
+    <button class="btn outline" id="btnExemplo">📋 Carregar exemplo</button>
+    <button class="btn outline" id="btnNovo">🗑️ Começar do zero</button>
+    <button class="btn outline" id="btnImportar">📂 Importar JSON</button>
+    <button class="btn outline" id="btnExportarJson">💾 Exportar JSON</button>
+    <button class="btn dourado" id="btnGerar">⬇️ Gerar página HTML</button>
+    <input type="file" id="inputImportar" accept="application/json">
+  </div>
+
+  <main>
+    <div id="painelEditor" class="ativo">
+      <div class="card-cabecalho-editor">
+        <h3>Cabeçalho da escala</h3>
+        <div class="linha-campos">
+          <div class="campo">
+            <label>Título principal</label>
+            <input type="text" id="campoTitulo">
+          </div>
+          <div class="campo">
+            <label>Mês / Período (aparece no topo)</label>
+            <input type="text" id="campoMesAno" placeholder="Ex: Setembro de 2026">
+          </div>
+        </div>
+        <div class="campo">
+          <label>Versículo ou frase de abertura (opcional)</label>
+          <input type="text" id="campoVersiculo" placeholder='Ex: "Eis a serva do Senhor..." — Lc 1,38'>
+        </div>
+      </div>
+
+      <div class="card-cabecalho-editor bloco-calendario-api">
+        <h3>🗓️ Carregar calendário litúrgico</h3>
+        <p class="dica-calendario">Busca as celebrações do mês e cria automaticamente uma data para cada dia, já com o nome da celebração — você só precisa preencher os horários e os coroinhas.</p>
+        <div class="linha-campos">
+          <div class="campo" style="flex:2;">
+            <label>Fonte do calendário</label>
+            <select id="fonteCalendario">
+              <option value="liturgiadiaria">Liturgia Diária (Brasil, recomendada)</option>
+              <option value="litcal">Liturgical Calendar API (internacional)</option>
+            </select>
+          </div>
+          <div class="campo">
+            <label>Mês</label>
+            <select id="mesCalendario">
+              <option value="1">Janeiro</option><option value="2">Fevereiro</option><option value="3">Março</option>
+              <option value="4">Abril</option><option value="5">Maio</option><option value="6">Junho</option>
+              <option value="7">Julho</option><option value="8">Agosto</option><option value="9">Setembro</option>
+              <option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
+            </select>
+          </div>
+          <div class="campo">
+            <label>Ano</label>
+            <input type="number" id="anoCalendario" min="1970" max="9999" value="2026">
+          </div>
+        </div>
+        <div class="linha-campos" id="camposLitcal" style="display:none;">
+          <div class="campo">
+            <label>Calendário</label>
+            <select id="tipoCalendario">
+              <option value="geral">Geral Romano</option>
+              <option value="nacional">Nacional (por país)</option>
+              <option value="diocesano">Diocesano</option>
+            </select>
+          </div>
+          <div class="campo" id="campoCodigoCalendario">
+            <label>Código do país/diocese</label>
+            <input type="text" id="codigoCalendario" placeholder="Ex: BR" list="listaCodigosPaises">
+            <datalist id="listaCodigosPaises">
+              <option value="BR">Brasil</option><option value="PT">Portugal</option><option value="US">Estados Unidos</option>
+              <option value="IT">Itália</option><option value="VA">Vaticano</option><option value="AR">Argentina</option>
+              <option value="MX">México</option><option value="ES">Espanha</option><option value="FR">França</option>
+            </datalist>
+          </div>
+          <div class="campo">
+            <label>Idioma</label>
+            <input type="text" id="idiomaCalendario" value="pt" placeholder="pt">
+          </div>
+        </div>
+        <div class="linha-campos">
+          <div class="campo" style="flex:2;">
+            <label>Aplicar as datas em</label>
+            <select id="aplicarCalendarioA">
+              <option value="todas">Todas as igrejas</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn dourado pequeno" id="btnBuscarCalendario">🔎 Buscar celebrações do mês</button>
+        <div class="status-calendario" id="statusCalendario"></div>
+        <div class="area-colar-json" id="areaColarJson" style="display:none;">
+          <p class="dica-calendario" style="margin-bottom:8px;">
+            Abra <a href="#" id="linkAbrirApi" target="_blank" rel="noopener">este link da API</a> em uma nova aba,
+            selecione todo o texto (Ctrl+A / Cmd+A), copie (Ctrl+C / Cmd+C) e cole aqui embaixo:
+          </p>
+          <textarea id="campoJsonColado" rows="5" placeholder="Cole aqui o JSON retornado pela API..." style="width:100%; padding:10px; border-radius:10px; border:1.5px solid rgba(122,31,43,0.18); background:var(--branco); color:var(--texto); font-family:monospace; font-size:0.78rem;"></textarea>
+          <button class="btn outline pequeno" id="btnProcessarJsonColado" style="margin-top:8px;">✓ Processar JSON colado</button>
+        </div>
+      </div>
+
+      <div id="listaIgrejas"></div>
+
+      <button class="btn" id="btnAddIgreja">➕ Adicionar igreja / local</button>
+    </div>
+
+    <div id="painelPreview">
+      <div class="painel-controles">
+        <div class="linha-controles">
+          <div class="campo-busca">
+            <svg class="icone-busca" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="busca" placeholder="Pesquisar por nome...">
+          </div>
+          <select id="filtroLocal"><option value="todos">Todas as igrejas</option></select>
+          <select id="filtroDia"><option value="todos">Todos os dias</option></select>
+          <select id="filtroHorario"><option value="todos">Todos os horários</option></select>
+          <button class="btn outline pequeno" id="btnLimparFiltros">Limpar</button>
+          <button class="btn pequeno" id="btnImprimir">🖨️ Imprimir / PDF</button>
+        </div>
+        <div class="contagem-resultados" id="contagem"></div>
+      </div>
+      <div id="conteudoPreview"></div>
+    </div>
+
+    <div id="painelContador">
+      <div class="painel-controles">
+        <div class="linha-controles">
+          <div class="campo" style="flex:2; margin-bottom:0;">
+            <label style="margin-bottom:5px;">Igreja</label>
+            <select id="filtroLocalContador"><option value="todos">Todas as igrejas</option></select>
+          </div>
+        </div>
+      </div>
+      <div class="bloco-contador">
+        <h3>📊 Quantas vezes cada coroinha está escalado</h3>
+        <p class="dica-calendario">Contagem de todas as escalas preenchidas (horários com nome definido) no período atual. Nomes marcados como "A definir" não entram na contagem.</p>
+        <div id="conteudoContador"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+/* ================= ESTADO ================= */
+let estado = null;
+
+function estadoPadrao(){
+  return {
+    titulo: "Escala de Coroinhas",
+    mesAno: "Mês de 2026",
+    versiculo: "",
+    locais: []
+  };
+}
+
+function estadoExemplo(){
+  return {
+    titulo: "Escala de Coroinhas",
+    mesAno: "Setembro de 2026",
+    versiculo: '"Prefiro morrer a entregar aos cães raivosos o Corpo de Cristo." — São Tarcísio, mártir da Eucaristia',
+    locais: [
+      {
+        nome: "Paróquia São Tarcísio",
+        eventos: [
+          {
+            data: "2026-09-06",
+            celebracao: "Domingo do Tempo Comum",
+            horarios: [
+              { hora: "08:00", especial:false, especialTexto:"", servidores: [ {funcao:"Cerimoniário", nome:"Pedro Chagas"}, {funcao:"Acólito", nome:"[A DEFINIR]"} ] },
+              { hora: "10:00", especial:false, especialTexto:"", servidores: [ {funcao:"Cerimoniário", nome:"Amanda"}, {funcao:"Acólito", nome:"Arthur"} ] }
+            ]
+          }
+        ]
+      },
+      {
+        nome: "Capela Santa Luzia",
+        eventos: [
+          {
+            data: "2026-09-06",
+            celebracao: "Domingo do Tempo Comum",
+            horarios: [
+              { hora: "19:30", especial:false, especialTexto:"", servidores: [ {funcao:"Cerimoniário", nome:"Ana Rosa"} ] }
+            ]
+          }
+        ]
+      }
+    ]
+  };
+}
+
+function salvarLocal(){
+  try{ localStorage.setItem('escalaBuilderEstado', JSON.stringify(estado)); }catch(e){}
+}
+function carregarLocal(){
+  try{
+    const salvo = localStorage.getItem('escalaBuilderEstado');
+    return salvo ? JSON.parse(salvo) : null;
+  }catch(e){ return null; }
+}
+
+estado = carregarLocal() || estadoExemplo();
+
+/* ================= UTIL ================= */
+const DIAS_SEMANA = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+const MESES_ABREV = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const MESES_COMPLETO = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+function diaSemanaDe(iso){
+  if(!iso) return '';
+  const d = new Date(iso + 'T00:00:00');
+  if(isNaN(d)) return '';
+  return DIAS_SEMANA[d.getDay()];
+}
+function mesAbrevDe(iso){
+  if(!iso) return '';
+  const d = new Date(iso + 'T00:00:00');
+  if(isNaN(d)) return '';
+  return MESES_ABREV[d.getMonth()];
+}
+function diaNumeroDe(iso){
+  if(!iso) return '?';
+  const d = new Date(iso + 'T00:00:00');
+  if(isNaN(d)) return '?';
+  return d.getDate();
+}
+function iniciais(nome){
+  if(!nome || nome.includes('DEFINIR')) return '?';
+  const partes = nome.trim().split(/\s+/).filter(Boolean);
+  if(partes.length === 0) return '?';
+  if(partes.length === 1) return (partes[0].substring(0,2) || '?').toUpperCase();
+  const primeira = partes[0].charAt(0) || '';
+  const ultima = partes[partes.length-1].charAt(0) || '';
+  return (primeira + ultima).toUpperCase() || '?';
+}
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function baixarArquivo(nome, conteudo, tipo){
+  const blob = new Blob([conteudo], {type: tipo});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = nome;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ================= RENDER EDITOR ================= */
+function renderEditor(){
+  document.getElementById('campoTitulo').value = estado.titulo;
+  document.getElementById('campoMesAno').value = estado.mesAno;
+  document.getElementById('campoVersiculo').value = estado.versiculo;
+  popularSeletorAplicarCalendario();
+
+  const lista = document.getElementById('listaIgrejas');
+  lista.innerHTML = '';
+
+  if(estado.locais.length === 0){
+    lista.innerHTML = '<div class="vazio-aviso">Nenhuma igreja adicionada ainda. Clique em "Adicionar igreja / local" para começar.</div>';
+  }
+
+  estado.locais.forEach(local => {
+    const blocoIgreja = document.createElement('div');
+    blocoIgreja.className = 'bloco-igreja';
+
+    const cabecalho = document.createElement('div');
+    cabecalho.className = 'cabecalho-igreja';
+    const campoNome = document.createElement('div');
+    campoNome.className = 'campo';
+    campoNome.innerHTML = '<label>Nome da igreja / capela</label>';
+    const inputNome = document.createElement('input');
+    inputNome.type = 'text'; inputNome.value = local.nome; inputNome.placeholder = 'Ex: Paróquia São José';
+    inputNome.addEventListener('input', () => { local.nome = inputNome.value; salvarLocal(); renderPreview(); });
+    campoNome.appendChild(inputNome);
+    cabecalho.appendChild(campoNome);
+
+    const btnRemoverIgreja = document.createElement('button');
+    btnRemoverIgreja.className = 'btn vermelho pequeno';
+    btnRemoverIgreja.textContent = '✕ Remover igreja';
+    btnRemoverIgreja.addEventListener('click', () => {
+      if(confirm('Remover esta igreja e todos os seus eventos?')){
+        estado.locais = estado.locais.filter(l => l !== local);
+        salvarLocal(); renderEditor(); renderPreview();
+      }
+    });
+    cabecalho.appendChild(btnRemoverIgreja);
+    blocoIgreja.appendChild(cabecalho);
+
+    local.eventos.forEach(evento => {
+      blocoIgreja.appendChild(renderBlocoEvento(local, evento));
+    });
+
+    const btnAddEvento = document.createElement('button');
+    btnAddEvento.className = 'btn outline pequeno';
+    btnAddEvento.textContent = '➕ Adicionar celebração / data';
+    btnAddEvento.addEventListener('click', () => {
+      local.eventos.push({ data:'', celebracao:'', horarios: [] });
+      salvarLocal(); renderEditor(); renderPreview();
+    });
+    blocoIgreja.appendChild(btnAddEvento);
+
+    lista.appendChild(blocoIgreja);
+  });
+}
+
+function renderBlocoEvento(local, evento){
+  const bloco = document.createElement('div');
+  bloco.className = 'bloco-evento';
+
+  const cab = document.createElement('div');
+  cab.className = 'cabecalho-evento';
+
+  const campoData = document.createElement('div');
+  campoData.className = 'campo';
+  campoData.innerHTML = '<label>Data</label>';
+  const inputData = document.createElement('input');
+  inputData.type = 'date'; inputData.value = evento.data;
+  inputData.addEventListener('input', () => {
+    evento.data = inputData.value;
+    spanDiaSemana.textContent = diaSemanaDe(evento.data) || '—';
+    salvarLocal(); renderPreview();
+  });
+  campoData.appendChild(inputData);
+  cab.appendChild(campoData);
+
+  const spanDiaSemana = document.createElement('div');
+  spanDiaSemana.className = 'dia-semana-auto';
+  spanDiaSemana.textContent = diaSemanaDe(evento.data) || '—';
+  cab.appendChild(spanDiaSemana);
+
+  const campoCeleb = document.createElement('div');
+  campoCeleb.className = 'campo';
+  campoCeleb.style.flex = '2';
+  campoCeleb.innerHTML = '<label>Celebração (opcional)</label>';
+  const inputCeleb = document.createElement('input');
+  inputCeleb.type = 'text'; inputCeleb.value = evento.celebracao || ''; inputCeleb.placeholder = 'Ex: Domingo do Tempo Comum';
+  inputCeleb.addEventListener('input', () => { evento.celebracao = inputCeleb.value; salvarLocal(); renderPreview(); });
+  campoCeleb.appendChild(inputCeleb);
+  cab.appendChild(campoCeleb);
+
+  const btnRemoverEvento = document.createElement('button');
+  btnRemoverEvento.className = 'btn-remover-x';
+  btnRemoverEvento.title = 'Remover esta data';
+  btnRemoverEvento.innerHTML = '✕';
+  btnRemoverEvento.addEventListener('click', () => {
+    local.eventos = local.eventos.filter(e => e !== evento);
+    salvarLocal(); renderEditor(); renderPreview();
+  });
+  cab.appendChild(btnRemoverEvento);
+
+  bloco.appendChild(cab);
+
+  evento.horarios.forEach(h => bloco.appendChild(renderBlocoHorario(evento, h)));
+
+  const btnAddHorario = document.createElement('button');
+  btnAddHorario.className = 'btn outline pequeno';
+  btnAddHorario.textContent = '➕ Adicionar horário';
+  btnAddHorario.addEventListener('click', () => {
+    evento.horarios.push({ hora:'', especial:false, especialTexto:'', servidores: [{funcao:'Cerimoniário', nome:''}, {funcao:'Acólito', nome:''}] });
+    salvarLocal(); renderEditor(); renderPreview();
+  });
+  bloco.appendChild(btnAddHorario);
+
+  return bloco;
+}
+
+function renderBlocoHorario(evento, horario){
+  const bloco = document.createElement('div');
+  bloco.className = 'bloco-horario';
+
+  const cab = document.createElement('div');
+  cab.className = 'cabecalho-horario';
+
+  const campoHora = document.createElement('div');
+  campoHora.className = 'campo';
+  campoHora.innerHTML = '<label>Horário</label>';
+  const inputHora = document.createElement('input');
+  inputHora.type = 'time'; inputHora.value = horario.hora;
+  inputHora.addEventListener('input', () => { horario.hora = inputHora.value; salvarLocal(); renderPreview(); });
+  campoHora.appendChild(inputHora);
+  cab.appendChild(campoHora);
+
+  const labelCheck = document.createElement('label');
+  labelCheck.className = 'check-especial';
+  const checkEspecial = document.createElement('input');
+  checkEspecial.type = 'checkbox'; checkEspecial.checked = !!horario.especial;
+  checkEspecial.addEventListener('change', () => {
+    horario.especial = checkEspecial.checked;
+    salvarLocal(); renderEditor(); renderPreview();
+  });
+  labelCheck.appendChild(checkEspecial);
+  labelCheck.append(' Evento especial (sem escala de nomes)');
+  cab.appendChild(labelCheck);
+
+  const btnRemoverHorario = document.createElement('button');
+  btnRemoverHorario.className = 'btn-remover-x';
+  btnRemoverHorario.title = 'Remover este horário';
+  btnRemoverHorario.innerHTML = '✕';
+  btnRemoverHorario.addEventListener('click', () => {
+    evento.horarios = evento.horarios.filter(h => h !== horario);
+    salvarLocal(); renderEditor(); renderPreview();
+  });
+  cab.appendChild(btnRemoverHorario);
+
+  bloco.appendChild(cab);
+
+  if(horario.especial){
+    const campoTexto = document.createElement('div');
+    campoTexto.className = 'campo';
+    campoTexto.innerHTML = '<label>Descrição do evento especial</label>';
+    const inputTexto = document.createElement('input');
+    inputTexto.type = 'text'; inputTexto.value = horario.especialTexto || ''; inputTexto.placeholder = 'Ex: Caminhada da Família';
+    inputTexto.addEventListener('input', () => { horario.especialTexto = inputTexto.value; salvarLocal(); renderPreview(); });
+    campoTexto.appendChild(inputTexto);
+    bloco.appendChild(campoTexto);
+  } else {
+    horario.servidores.forEach(s => bloco.appendChild(renderLinhaServidor(horario, s)));
+    const btnAddServidor = document.createElement('button');
+    btnAddServidor.className = 'btn outline pequeno';
+    btnAddServidor.textContent = '➕ Adicionar servidor';
+    btnAddServidor.addEventListener('click', () => {
+      horario.servidores.push({funcao:'Acólito', nome:''});
+      salvarLocal(); renderEditor(); renderPreview();
+    });
+    bloco.appendChild(btnAddServidor);
+  }
+
+  return bloco;
+}
+
+function renderLinhaServidor(horario, servidor){
+  const linha = document.createElement('div');
+  linha.className = 'linha-servidor';
+
+  const inputFuncao = document.createElement('input');
+  inputFuncao.type = 'text'; inputFuncao.placeholder = 'Função (ex: Acólito)'; inputFuncao.value = servidor.funcao;
+  inputFuncao.setAttribute('list','listaFuncoes');
+  inputFuncao.addEventListener('input', () => { servidor.funcao = inputFuncao.value; salvarLocal(); renderPreview(); });
+  linha.appendChild(inputFuncao);
+
+  const inputNome = document.createElement('input');
+  inputNome.type = 'text'; inputNome.placeholder = 'Nome (ou [A DEFINIR])'; inputNome.value = servidor.nome;
+  inputNome.addEventListener('input', () => { servidor.nome = inputNome.value; salvarLocal(); renderPreview(); });
+  linha.appendChild(inputNome);
+
+  const btnRemover = document.createElement('button');
+  btnRemover.className = 'btn-remover-x';
+  btnRemover.innerHTML = '✕';
+  btnRemover.title = 'Remover servidor';
+  btnRemover.addEventListener('click', () => {
+    horario.servidores = horario.servidores.filter(s => s !== servidor);
+    salvarLocal(); renderEditor(); renderPreview();
+  });
+  linha.appendChild(btnRemover);
+
+  return linha;
+}
+
+/* datalist de funções comuns */
+const datalist = document.createElement('datalist');
+datalist.id = 'listaFuncoes';
+['Cerimoniário','Acólito','Turiferário','Naveteiro','Cruciferário','Ceroferário','Comentarista'].forEach(f => {
+  const opt = document.createElement('option'); opt.value = f; datalist.appendChild(opt);
+});
+document.body.appendChild(datalist);
+
+document.getElementById('campoTitulo').addEventListener('input', e => { estado.titulo = e.target.value; salvarLocal(); renderPreview(); });
+document.getElementById('campoMesAno').addEventListener('input', e => { estado.mesAno = e.target.value; salvarLocal(); renderPreview(); });
+document.getElementById('campoVersiculo').addEventListener('input', e => { estado.versiculo = e.target.value; salvarLocal(); renderPreview(); });
+
+document.getElementById('btnAddIgreja').addEventListener('click', () => {
+  estado.locais.push({ nome: 'Nova Igreja', eventos: [] });
+  salvarLocal(); renderEditor(); renderPreview();
+});
+
+/* ================= CALENDÁRIO LITÚRGICO (API) ================= */
+function popularSeletorAplicarCalendario(){
+  const sel = document.getElementById('aplicarCalendarioA');
+  const valorAtual = sel.value;
+  sel.innerHTML = '<option value="todas">Todas as igrejas</option>';
+  estado.locais.forEach(l => {
+    const opt = document.createElement('option');
+    opt.value = l.nome; opt.textContent = l.nome;
+    sel.appendChild(opt);
+  });
+  const valores = [...sel.options].map(o => o.value);
+  sel.value = valores.includes(valorAtual) ? valorAtual : 'todas';
+}
+
+document.getElementById('tipoCalendario').addEventListener('change', (e) => {
+  document.getElementById('campoCodigoCalendario').classList.toggle('visivel', e.target.value !== 'geral');
+});
+
+document.getElementById('fonteCalendario').addEventListener('change', (e) => {
+  document.getElementById('camposLitcal').style.display = e.target.value === 'litcal' ? 'flex' : 'none';
+  document.getElementById('areaColarJson').style.display = 'none';
+  document.getElementById('statusCalendario').textContent = '';
+});
+
+let ultimoContextoCalendario = null; // guarda mes/ano/aplicarA da última tentativa, para reuso no fallback manual (litcal)
+
+/* --------- Aplicação genérica: escreve o resultado (mapa dia -> nome da celebração) no estado --------- */
+function aplicarCelebracoesNoEstado(porDia, mes, ano, aplicarA){
+  const diasNoMes = new Date(ano, mes, 0).getDate();
+  const mesStr = String(mes).padStart(2, '0');
+  const alvos = aplicarA === 'todas' ? estado.locais : estado.locais.filter(l => l.nome === aplicarA);
+
+  let adicionados = 0, atualizados = 0;
+  alvos.forEach(local => {
+    for(let dia = 1; dia <= diasNoMes; dia++){
+      const diaStr = String(dia).padStart(2, '0');
+      const dataISO = ano + '-' + mesStr + '-' + diaStr;
+      const nomeCeleb = porDia[dia] || '';
+      const existente = local.eventos.find(e => e.data === dataISO);
+      if(existente){
+        if(!existente.celebracao && nomeCeleb){ existente.celebracao = nomeCeleb; atualizados++; }
+      } else {
+        local.eventos.push({ data: dataISO, celebracao: nomeCeleb, horarios: [] });
+        adicionados++;
+      }
+    }
+  });
+
+  estado.mesAno = MESES_COMPLETO[mes - 1] + ' de ' + ano;
+  salvarLocal();
+  renderEditor();
+  renderPreview();
+  return { adicionados, atualizados };
+}
+
+/* ============ FONTE 1: Liturgia Diária (Brasil, busca dia a dia) ============ */
+async function buscarDiaLiturgiaDiaria(dia, mes, ano, usarProxy){
+  let url = 'https://liturgia.up.railway.app/v2/?dia=' + dia + '&mes=' + mes + '&ano=' + ano;
+  if(usarProxy) url = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
+  const resp = await fetch(url);
+  if(resp.status === 404){ return ''; } // API respondeu, mas não há liturgia definida para esse dia
+  if(!resp.ok){ throw new Error('HTTP ' + resp.status); }
+  const dados = await resp.json();
+  return dados.liturgia || '';
+}
+
+async function carregarViaLiturgiaDiaria(mes, ano, aplicarA, statusEl, btn){
+  const diasNoMes = new Date(ano, mes, 0).getDate();
+
+  // testa uma vez sem proxy; se falhar, usa proxy CORS para todas as requisições
+  statusEl.textContent = 'Testando conexão...';
+  let usarProxy = false;
+  try{
+    await buscarDiaLiturgiaDiaria(1, mes, ano, false);
+  }catch(e){
+    console.warn('Requisição direta falhou, tentando via proxy CORS...', e);
+    usarProxy = true;
+  }
+
+  const resultados = {};
+  let indiceAtual = 1;
+  let concluidos = 0;
+  const concorrencia = 5;
+
+  async function worker(){
+    while(indiceAtual <= diasNoMes){
+      const dia = indiceAtual++;
+      try{
+        resultados[dia] = await buscarDiaLiturgiaDiaria(dia, mes, ano, usarProxy);
+      }catch(e){
+        resultados[dia] = null; // falha nesse dia específico
+      }
+      concluidos++;
+      statusEl.textContent = 'Carregando calendário... (' + concluidos + '/' + diasNoMes + ' dias)';
+    }
+  }
+
+  const workers = [];
+  for(let i = 0; i < concorrencia; i++) workers.push(worker());
+  await Promise.all(workers);
+
+  const falhas = Object.values(resultados).filter(v => v === null).length;
+
+  if(falhas === diasNoMes){
+    statusEl.textContent = 'Não foi possível carregar o calendário (mesmo com proxy). O serviço pode estar temporariamente indisponível — tente novamente mais tarde, ou troque a fonte para "Liturgical Calendar API" acima.';
+    statusEl.className = 'status-calendario erro';
+    btn.disabled = false;
+    return;
+  }
+
+  const porDia = {};
+  Object.keys(resultados).forEach(dia => { porDia[dia] = resultados[dia] || ''; });
+
+  const { adicionados, atualizados } = aplicarCelebracoesNoEstado(porDia, mes, ano, aplicarA);
+
+  statusEl.textContent = '✓ Calendário carregado: ' + adicionados + ' data(s) adicionada(s)'
+    + (atualizados ? ', ' + atualizados + ' atualizada(s)' : '')
+    + (falhas ? ', ' + falhas + ' dia(s) não puderam ser carregados (preencha manualmente se precisar)' : '')
+    + '. Agora preencha os horários e os coroinhas em cada dia.';
+  statusEl.className = 'status-calendario sucesso';
+  btn.disabled = false;
+}
+
+/* ============ FONTE 2: Liturgical Calendar API (litcal, internacional) ============ */
+function montarUrlCalendario(tipo, codigo, ano, idioma){
+  const base = 'https://litcal.johnromanodorazio.com/api/v5/calendar';
+  let url;
+  if(tipo === 'nacional') url = base + '/nation/' + encodeURIComponent(codigo) + '/' + ano;
+  else if(tipo === 'diocesano') url = base + '/diocese/' + encodeURIComponent(codigo) + '/' + ano;
+  else url = base + '/' + ano;
+  url += '?locale=' + encodeURIComponent(idioma);
+  return url;
+}
+
+function processarDadosLitcal(dados, mes, ano, aplicarA){
+  const statusEl = document.getElementById('statusCalendario');
+  const todosEventos = (dados && dados.litcal) || [];
+  const eventosDoMes = todosEventos.filter(ev => ev.month === mes);
+
+  if(eventosDoMes.length === 0){
+    statusEl.textContent = 'Nenhuma celebração encontrada para esse mês nesse JSON.';
+    statusEl.className = 'status-calendario erro';
+    return false;
+  }
+
+  const porDiaEvento = {};
+  eventosDoMes.forEach(ev => {
+    const atual = porDiaEvento[ev.day];
+    if(!atual || (ev.grade || 0) >= (atual.grade || 0)){ porDiaEvento[ev.day] = ev; }
+  });
+  const porDia = {};
+  Object.keys(porDiaEvento).forEach(dia => { porDia[dia] = porDiaEvento[dia].name; });
+
+  const { adicionados, atualizados } = aplicarCelebracoesNoEstado(porDia, mes, ano, aplicarA);
+
+  statusEl.textContent = '✓ Calendário carregado: ' + adicionados + ' data(s) adicionada(s)'
+    + (atualizados ? ', ' + atualizados + ' atualizada(s)' : '') + '. Agora preencha os horários e os coroinhas em cada dia.';
+  statusEl.className = 'status-calendario sucesso';
+  document.getElementById('areaColarJson').style.display = 'none';
+  return true;
+}
+
+async function tentarFetchJson(url, timeoutMs){
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs || 12000);
+  try{
+    const resp = await fetch(url, { signal: controller.signal });
+    if(!resp.ok) throw new Error('HTTP ' + resp.status);
+    return await resp.json();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function carregarViaLitcal(mes, ano, aplicarA, statusEl, btn, areaColar){
+  const tipo = document.getElementById('tipoCalendario').value;
+  const codigo = document.getElementById('codigoCalendario').value.trim().toUpperCase();
+  const idioma = document.getElementById('idiomaCalendario').value.trim() || 'pt';
+
+  if((tipo === 'nacional' || tipo === 'diocesano') && !codigo){
+    statusEl.textContent = 'Informe o código do país (nacional) ou da diocese (diocesano). Ex: BR para Brasil.';
+    statusEl.className = 'status-calendario erro';
+    btn.disabled = false;
+    return;
+  }
+
+  const url = montarUrlCalendario(tipo, codigo, ano, idioma);
+  ultimoContextoCalendario = { mes, ano, aplicarA, url };
+  document.getElementById('linkAbrirApi').href = url;
+
+  statusEl.textContent = 'Carregando calendário...';
+  try{
+    const dados = await tentarFetchJson(url);
+    processarDadosLitcal(dados, mes, ano, aplicarA);
+    btn.disabled = false;
+    return;
+  }catch(erroDireto){
+    console.warn('Falha na requisição direta:', erroDireto);
+  }
+
+  statusEl.textContent = 'Conexão direta falhou, tentando via proxy...';
+  try{
+    const urlProxy = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
+    const dados = await tentarFetchJson(urlProxy, 15000);
+    processarDadosLitcal(dados, mes, ano, aplicarA);
+    btn.disabled = false;
+    return;
+  }catch(erroProxy){
+    console.warn('Falha também via proxy:', erroProxy);
+  }
+
+  statusEl.innerHTML = 'Não foi possível buscar automaticamente (provavelmente bloqueio de CORS, comum quando o arquivo é aberto direto do computador). Use a opção abaixo para colar o resultado manualmente, ou troque a fonte para "Liturgia Diária" acima.';
+  statusEl.className = 'status-calendario erro';
+  areaColar.style.display = 'block';
+  btn.disabled = false;
+}
+
+/* ============ Disparo principal ============ */
+async function carregarCalendarioLiturgico(){
+  const btn = document.getElementById('btnBuscarCalendario');
+  const statusEl = document.getElementById('statusCalendario');
+  const areaColar = document.getElementById('areaColarJson');
+  const fonte = document.getElementById('fonteCalendario').value;
+  const ano = parseInt(document.getElementById('anoCalendario').value, 10);
+  const mes = parseInt(document.getElementById('mesCalendario').value, 10);
+  const aplicarA = document.getElementById('aplicarCalendarioA').value;
+
+  statusEl.className = 'status-calendario';
+  statusEl.textContent = '';
+  areaColar.style.display = 'none';
+
+  if(!ano || !mes){ statusEl.textContent = 'Selecione o mês e o ano.'; statusEl.className = 'status-calendario erro'; return; }
+  if(estado.locais.length === 0){
+    statusEl.textContent = 'Adicione ao menos uma igreja antes de carregar o calendário.';
+    statusEl.className = 'status-calendario erro';
+    return;
+  }
+
+  btn.disabled = true;
+
+  if(fonte === 'liturgiadiaria'){
+    await carregarViaLiturgiaDiaria(mes, ano, aplicarA, statusEl, btn);
+  } else {
+    await carregarViaLitcal(mes, ano, aplicarA, statusEl, btn, areaColar);
+  }
+}
+
+document.getElementById('btnProcessarJsonColado').addEventListener('click', () => {
+  const statusEl = document.getElementById('statusCalendario');
+  const texto = document.getElementById('campoJsonColado').value.trim();
+  if(!texto){ statusEl.textContent = 'Cole o JSON no campo antes de processar.'; statusEl.className = 'status-calendario erro'; return; }
+  if(!ultimoContextoCalendario){ statusEl.textContent = 'Configure o mês/ano e clique em "Buscar" primeiro.'; statusEl.className = 'status-calendario erro'; return; }
+  try{
+    const dados = JSON.parse(texto);
+    const ok = processarDadosLitcal(dados, ultimoContextoCalendario.mes, ultimoContextoCalendario.ano, ultimoContextoCalendario.aplicarA);
+    if(ok){ document.getElementById('campoJsonColado').value = ''; }
+  }catch(e){
+    statusEl.textContent = 'O texto colado não é um JSON válido. Certifique-se de copiar a resposta completa da API.';
+    statusEl.className = 'status-calendario erro';
+  }
+});
+
+document.getElementById('btnBuscarCalendario').addEventListener('click', carregarCalendarioLiturgico);
+
+// seleciona o mês atual por padrão
+(function definirMesAtualPadrao(){
+  const hoje = new Date();
+  document.getElementById('mesCalendario').value = String(hoje.getMonth() + 1);
+  document.getElementById('anoCalendario').value = String(hoje.getFullYear());
+})();
+
+/* ================= RENDER PREVIEW ================= */
+const ICONE_IGREJA = `<svg class="icone-igreja" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 L12 6"/><path d="M9 4 L15 4"/><path d="M4 21 L4 11 L12 6 L20 11 L20 21 Z"/><path d="M9 21 L9 15 L15 15 L15 21"/><circle cx="12" cy="10.5" r="1.2" fill="currentColor" stroke="none"/></svg>`;
+
+function destacarTexto(texto, termo){
+  if(!termo) return escapeHtml(texto);
+  const seguro = escapeHtml(texto);
+  const regex = new RegExp('(' + termo.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')', 'ig');
+  return seguro.replace(regex, '<span class="destaque">$1</span>');
+}
+
+function renderizarServidorHTML(s, termoBusca){
+  const definir = (s.nome||'').includes('DEFINIR') || !s.nome;
+  const nomeShow = definir ? (s.nome || 'A definir') : s.nome;
+  return `<li class="${definir ? 'a-definir' : ''}">
+      <span class="avatar-inicial">${iniciais(s.nome)}</span>
+      <span>
+        <span class="nome-servidor">${destacarTexto(definir ? 'A definir' : nomeShow, termoBusca)}</span>
+        <span class="funcao-servidor"> · ${escapeHtml(s.funcao||'')}</span>
+      </span>
+    </li>`;
+}
+
+function renderizarCardHTML(local, evento, termoBusca){
+  const dia = diaNumeroDe(evento.data);
+  const diaSemana = diaSemanaDe(evento.data);
+  const mesAbrev = mesAbrevDe(evento.data);
+  const horariosHtml = evento.horarios.map(h => {
+    if(h.especial){
+      return `<div class="horario-item">
+        <div class="horario-cabecalho"><span class="badge-hora">${h.hora||'--:--'}</span></div>
+        <div class="evento-especial">✦ ${escapeHtml(h.especialTexto||'Evento especial')}</div>
+      </div>`;
+    }
+    const servidoresHtml = h.servidores.map(s => renderizarServidorHTML(s, termoBusca)).join('');
+    return `<div class="horario-item">
+        <div class="horario-cabecalho"><span class="badge-hora">${h.hora||'--:--'}</span></div>
+        <ul class="lista-servidores">${servidoresHtml}</ul>
+      </div>`;
+  }).join('');
+  const celebracaoHtml = evento.celebracao ? `<div class="celebracao">${escapeHtml(evento.celebracao)}</div>` : '';
+  const nomesBusca = evento.horarios.flatMap(h => (h.servidores||[]).map(s=>s.nome||'')).join(', ').toLowerCase();
+  const horas = evento.horarios.map(h => h.hora).join('|');
+
+  return `<div class="card" data-local="${escapeHtml(local.nome)}" data-dia="${diaSemana}" data-horas="${horas}" data-nomes="${escapeHtml(nomesBusca)}">
+      <div class="card-data">
+        <div><span class="dia-mes">${dia}</span><span class="dia-semana">${diaSemana||'—'}</span></div>
+        <span class="selo-mes">${mesAbrev}</span>
+      </div>
+      ${celebracaoHtml}
+      ${horariosHtml}
+    </div>`;
+}
+
+function renderPreview(){
+  document.getElementById('campoTitulo') && (document.title = estado.titulo + ' — Construtor');
+
+  const container = document.getElementById('conteudoPreview');
+  const cabecalho = `
+    <div class="titulo-preview-header">
+      <div class="subtitulo">Sob a proteção de São Tarcísio</div>
+      <h2>${escapeHtml(estado.titulo)}</h2>
+      <div class="mesano">${escapeHtml(estado.mesAno)}</div>
+      ${estado.versiculo ? `<p class="versiculo">${escapeHtml(estado.versiculo)}</p>` : ''}
+    </div>`;
+
+  const blocos = estado.locais.map(local => {
+    const eventosOrdenados = [...local.eventos].filter(e => e.data).sort((a,b) => a.data.localeCompare(b.data));
+    if(eventosOrdenados.length === 0) return '';
+    return `<section class="bloco-local">
+      <div class="titulo-local">${ICONE_IGREJA}<h2>${escapeHtml(local.nome)}</h2></div>
+      <div class="grade-cards">
+        ${eventosOrdenados.map(e => renderizarCardHTML(local, e, '')).join('')}
+      </div>
+    </section>`;
+  }).join('');
+
+  container.innerHTML = cabecalho + (blocos || '<div class="vazio-aviso">Adicione igrejas e datas na aba "Editar" para ver a pré-visualização.</div>');
+
+  popularFiltros();
+  aplicarFiltros();
+}
+
+function popularFiltros(){
+  const selLocal = document.getElementById('filtroLocal');
+  const valorLocalAtual = selLocal.value;
+  selLocal.innerHTML = '<option value="todos">Todas as igrejas</option>';
+  estado.locais.forEach(l => {
+    const opt = document.createElement('option'); opt.value = l.nome; opt.textContent = l.nome;
+    selLocal.appendChild(opt);
+  });
+  selLocal.value = [...selLocal.options].some(o=>o.value===valorLocalAtual) ? valorLocalAtual : 'todos';
+
+  const dias = [...new Set(estado.locais.flatMap(l => l.eventos.map(e => diaSemanaDe(e.data))).filter(Boolean))];
+  const selDia = document.getElementById('filtroDia');
+  const valorDiaAtual = selDia.value;
+  selDia.innerHTML = '<option value="todos">Todos os dias</option>';
+  dias.forEach(d => { const opt = document.createElement('option'); opt.value = d; opt.textContent = d; selDia.appendChild(opt); });
+  selDia.value = dias.includes(valorDiaAtual) ? valorDiaAtual : 'todos';
+
+  const horarios = [...new Set(estado.locais.flatMap(l => l.eventos.flatMap(e => e.horarios.map(h => h.hora))).filter(Boolean))].sort();
+  const selHora = document.getElementById('filtroHorario');
+  const valorHoraAtual = selHora.value;
+  selHora.innerHTML = '<option value="todos">Todos os horários</option>';
+  horarios.forEach(h => { const opt = document.createElement('option'); opt.value = h; opt.textContent = h; selHora.appendChild(opt); });
+  selHora.value = horarios.includes(valorHoraAtual) ? valorHoraAtual : 'todos';
+}
+
+function aplicarFiltros(){
+  const termo = document.getElementById('busca').value.trim().toLowerCase();
+  const local = document.getElementById('filtroLocal').value;
+  const dia = document.getElementById('filtroDia').value;
+  const horario = document.getElementById('filtroHorario').value;
+
+  const cards = document.querySelectorAll('#conteudoPreview .card');
+  let visiveis = 0;
+  cards.forEach(card => {
+    const nomes = card.getAttribute('data-nomes') || '';
+    const cardLocal = card.getAttribute('data-local');
+    const cardDia = card.getAttribute('data-dia');
+    const horas = (card.getAttribute('data-horas')||'').split('|');
+    const matchBusca = !termo || nomes.includes(termo);
+    const matchLocal = local === 'todos' || cardLocal === local;
+    const matchDia = dia === 'todos' || cardDia === dia;
+    const matchHorario = horario === 'todos' || horas.includes(horario);
+    const mostrar = matchBusca && matchLocal && matchDia && matchHorario;
+    card.classList.toggle('oculto', !mostrar);
+    if(mostrar) visiveis++;
+  });
+  document.querySelectorAll('#conteudoPreview .bloco-local').forEach(sec => {
+    const temVisivel = [...sec.querySelectorAll('.card')].some(c => !c.classList.contains('oculto'));
+    sec.style.display = temVisivel ? '' : 'none';
+  });
+  const contagemEl = document.getElementById('contagem');
+  contagemEl.textContent = cards.length === 0 ? '' : (visiveis === 0
+    ? 'Nenhuma celebração encontrada com esses filtros.'
+    : `${visiveis} celebração${visiveis > 1 ? 'ões' : ''} encontrada${visiveis > 1 ? 's' : ''}`);
+}
+
+document.getElementById('busca').addEventListener('input', aplicarFiltros);
+document.getElementById('filtroLocal').addEventListener('change', aplicarFiltros);
+document.getElementById('filtroDia').addEventListener('change', aplicarFiltros);
+document.getElementById('filtroHorario').addEventListener('change', aplicarFiltros);
+document.getElementById('btnLimparFiltros').addEventListener('click', () => {
+  document.getElementById('busca').value = '';
+  document.getElementById('filtroLocal').value = 'todos';
+  document.getElementById('filtroDia').value = 'todos';
+  document.getElementById('filtroHorario').value = 'todos';
+  aplicarFiltros();
+});
+document.getElementById('btnImprimir').addEventListener('click', () => window.print());
+
+/* ================= CONTADOR DE ESCALAS ================= */
+function contarEscalasPorCoroinha(filtroLocalNome){
+  const contagem = {}; // nome -> { total, funcoes: {funcao: qtd} }
+  const locaisAlvo = (!filtroLocalNome || filtroLocalNome === 'todos')
+    ? estado.locais
+    : estado.locais.filter(l => l.nome === filtroLocalNome);
+
+  locaisAlvo.forEach(local => {
+    local.eventos.forEach(evento => {
+      evento.horarios.forEach(h => {
+        if(h.especial) return;
+        (h.servidores || []).forEach(s => {
+          const nome = (s.nome || '').trim();
+          if(!nome || nome.includes('DEFINIR')) return;
+          if(!contagem[nome]) contagem[nome] = { total: 0, funcoes: {} };
+          contagem[nome].total++;
+          const funcao = (s.funcao || '').trim() || 'Coroinha';
+          contagem[nome].funcoes[funcao] = (contagem[nome].funcoes[funcao] || 0) + 1;
+        });
+      });
+    });
+  });
+
+  return contagem;
+}
+
+function popularFiltroContador(){
+  const sel = document.getElementById('filtroLocalContador');
+  const valorAtual = sel.value || 'todos';
+  sel.innerHTML = '<option value="todos">Todas as igrejas</option>';
+  estado.locais.forEach(l => {
+    const opt = document.createElement('option');
+    opt.value = l.nome; opt.textContent = l.nome;
+    sel.appendChild(opt);
+  });
+  sel.value = [...sel.options].some(o => o.value === valorAtual) ? valorAtual : 'todos';
+}
+
+function renderContador(){
+  popularFiltroContador();
+  const filtro = document.getElementById('filtroLocalContador').value;
+  const contagem = contarEscalasPorCoroinha(filtro);
+  const entradas = Object.entries(contagem).sort((a,b) => b[1].total - a[1].total || a[0].localeCompare(b[0], 'pt-BR'));
+  const container = document.getElementById('conteudoContador');
+
+  if(entradas.length === 0){
+    container.innerHTML = '<div class="vazio-aviso">Nenhum coroinha escalado ainda. Preencha os nomes na aba "Editar" (ou carregue um calendário e complete os horários).</div>';
+    return;
+  }
+
+  const max = entradas[0][1].total;
+  const medalhas = ['🥇','🥈','🥉'];
+
+  const podioHtml = entradas.length >= 2 ? `<div class="top-podio">${
+    entradas.slice(0, 3).map(([nome, dados], i) => `
+      <div class="medalha">
+        <div class="num">${medalhas[i] || ''}</div>
+        <div class="nm">${escapeHtml(nome)}</div>
+        <div class="qt">${dados.total}× escalado${dados.total > 1 ? 's' : ''}</div>
+      </div>`).join('')
+  }</div>` : '';
+
+  const listaHtml = entradas.map(([nome, dados]) => {
+    const pct = max ? Math.round((dados.total / max) * 100) : 0;
+    const funcoesTexto = Object.entries(dados.funcoes).map(([f, q]) => `${f}: ${q}`).join(' · ');
+    return `<div class="linha-contador">
+        <div class="linha-contador-topo">
+          <span class="avatar-inicial">${iniciais(nome)}</span>
+          <span class="nome-contador">${escapeHtml(nome)}</span>
+          <span class="qtd-contador">${dados.total}×</span>
+        </div>
+        <div class="barra-fundo"><div class="barra-preenchida" style="width:${pct}%"></div></div>
+        <div class="funcoes-contador">${escapeHtml(funcoesTexto)}</div>
+      </div>`;
+  }).join('');
+
+  container.innerHTML = podioHtml + listaHtml;
+}
+
+document.getElementById('filtroLocalContador').addEventListener('change', renderContador);
+
+/* ================= ABAS ================= */
+function ativarAba(idBotaoAtivo){
+  ['abaEditorBtn','abaPreviewBtn','abaContadorBtn'].forEach(id => {
+    document.getElementById(id).classList.toggle('ativa', id === idBotaoAtivo);
+  });
+  document.getElementById('painelEditor').classList.toggle('ativo', idBotaoAtivo === 'abaEditorBtn');
+  document.getElementById('painelPreview').classList.toggle('ativo', idBotaoAtivo === 'abaPreviewBtn');
+  document.getElementById('painelContador').classList.toggle('ativo', idBotaoAtivo === 'abaContadorBtn');
+}
+
+document.getElementById('abaEditorBtn').addEventListener('click', () => {
+  ativarAba('abaEditorBtn');
+});
+document.getElementById('abaPreviewBtn').addEventListener('click', () => {
+  ativarAba('abaPreviewBtn');
+  renderPreview();
+});
+document.getElementById('abaContadorBtn').addEventListener('click', () => {
+  ativarAba('abaContadorBtn');
+  renderContador();
+});
+
+/* ================= AÇÕES GLOBAIS ================= */
+document.getElementById('btnExemplo').addEventListener('click', () => {
+  if(confirm('Isso substituirá os dados atuais pelo exemplo. Continuar?')){
+    estado = estadoExemplo(); salvarLocal(); renderEditor(); renderPreview();
+  }
+});
+document.getElementById('btnNovo').addEventListener('click', () => {
+  if(confirm('Isso apagará todos os dados atuais. Continuar?')){
+    estado = estadoPadrao(); salvarLocal(); renderEditor(); renderPreview();
+  }
+});
+document.getElementById('btnExportarJson').addEventListener('click', () => {
+  baixarArquivo('escala_dados.json', JSON.stringify(estado, null, 2), 'application/json');
+});
+document.getElementById('btnImportar').addEventListener('click', () => document.getElementById('inputImportar').click());
+document.getElementById('inputImportar').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try{
+      const novo = JSON.parse(ev.target.result);
+      if(!novo.locais) throw new Error('formato inválido');
+      estado = novo; salvarLocal(); renderEditor(); renderPreview();
+      alert('Dados importados com sucesso!');
+    }catch(err){
+      alert('Não foi possível importar este arquivo. Verifique se é um JSON exportado por este construtor.');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+document.getElementById('btnTema').addEventListener('click', () => {
+  const body = document.body;
+  const novo = body.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+  body.setAttribute('data-theme', novo);
+});
+
+/* ================= GERAR PÁGINA FINAL ================= */
+function gerarPaginaFinal(){
+  const dadosExport = {
+    titulo: estado.titulo,
+    mesAno: estado.mesAno,
+    versiculo: estado.versiculo,
+    locais: estado.locais.map(l => ({
+      nome: l.nome,
+      eventos: [...l.eventos].filter(e => e.data).sort((a,b) => a.data.localeCompare(b.data))
+    }))
+  };
+
+  const html = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${escapeHtml(dadosExport.titulo)} — ${escapeHtml(dadosExport.mesAno)}</title>
+<style>
+${CSS_PAGINA_FINAL}
+</style>
+</head>
+<body data-theme="light">
+<svg class="ornamento orn-1" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M50 5 L54 40 L90 44 L54 48 L50 90 L46 48 L10 44 L46 40 Z" fill="#c9a24b"/></svg>
+<svg class="ornamento orn-2" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M50 10 C 30 10 15 25 15 45 C15 65 30 85 50 92 C70 85 85 65 85 45 C85 25 70 10 50 10 Z" fill="none" stroke="#7a1f2b" stroke-width="2"/><path d="M50 25 L50 65 M35 40 L65 40" stroke="#7a1f2b" stroke-width="2"/></svg>
+<button class="toggle-tema" id="btnTema" title="Alternar tema"><svg id="iconeTema" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-5.4-5.4c0-1.81.91-3.4 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg></button>
+<header>
+  <svg class="estrela-topo" viewBox="0 0 24 24" fill="#f1e2b8" xmlns="http://www.w3.org/2000/svg"><path d="M12 2 L14.5 8.5 L21 9.3 L16 13.7 L17.5 20.3 L12 16.8 L6.5 20.3 L8 13.7 L3 9.3 L9.5 8.5 Z"/></svg>
+  <div class="subtitulo">Sob a proteção de São Tarcísio</div>
+  <h1>${escapeHtml(dadosExport.titulo)}</h1>
+  <div class="subtitulo" style="font-size:1.4rem; letter-spacing:1px; text-transform:none; color:#fff; font-weight:300;">${escapeHtml(dadosExport.mesAno)}</div>
+  <div class="linha-dourada"></div>
+  ${dadosExport.versiculo ? `<p class="versiculo">${escapeHtml(dadosExport.versiculo)}</p>` : ''}
+</header>
+<div class="painel-controles">
+  <div class="linha-controles">
+    <div class="campo-busca">
+      <svg class="icone-busca" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="busca" placeholder="Pesquisar por nome do coroinha...">
+    </div>
+    <select id="filtroLocal"><option value="todos">Todas as igrejas</option></select>
+    <select id="filtroDia"><option value="todos">Todos os dias</option></select>
+    <select id="filtroHorario"><option value="todos">Todos os horários</option></select>
+  </div>
+  <div class="linha-controles" style="margin-top:14px;">
+    <div class="botoes-acao"><button class="btn outline" id="btnLimpar">Limpar filtros</button></div>
+    <div class="botoes-acao" style="margin-left:auto;">
+      <button class="btn" id="btnImprimir">🖨️ Imprimir</button>
+      <button class="btn dourado" id="btnPdf">⬇️ Exportar PDF</button>
+    </div>
+  </div>
+  <div class="contagem-resultados" id="contagem"></div>
+</div>
+<main id="conteudo"></main>
+<footer>
+  <p class="frase">São Tarcísio, mártir da Eucaristia, rogai por nós, coroinhas!</p>
+  <p>${escapeHtml(dadosExport.titulo)} — ${escapeHtml(dadosExport.mesAno)}</p>
+</footer>
+${'<' + 'script>'}
+const DADOS_LOCAIS = ${JSON.stringify(dadosExport.locais)};
+${JS_PAGINA_FINAL}
+${'<' + '/script>'}
+</body>
+</html>`;
+
+  const nomeArquivo = 'escala_coroinhas_' + estado.mesAno.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'') + '.html';
+  baixarArquivo(nomeArquivo, html, 'text/html');
+}
+
+const CSS_PAGINA_FINAL = `
+:root{--azul-mariano:#7a1f2b;--azul-mariano-2:#a5303f;--azul-claro:#faeee2;--dourado:#c9a24b;--dourado-claro:#f1e2b8;--branco:#fff;--texto:#1f2937;--texto-suave:#5b6472;--sombra:0 10px 30px rgba(122,31,43,0.12);--radius:18px;--bg-grad:linear-gradient(160deg,#fdf6ec 0%,#f7e8d8 45%,#fdf1e0 100%);--card-bg:#fff;--header-grad:linear-gradient(120deg,#4a0f18 0%,#7a1f2b 55%,#a5303f 100%);}
+[data-theme="dark"]{--azul-mariano:#e8a7ac;--azul-mariano-2:#c97b83;--azul-claro:#2b1c17;--dourado:#e0c26e;--dourado-claro:#3a3320;--branco:#1c1210;--texto:#eef2ff;--texto-suave:#b7c0d4;--sombra:0 10px 30px rgba(0,0,0,0.45);--bg-grad:linear-gradient(160deg,#170d0a 0%,#1f1310 50%,#150c09 100%);--card-bg:#221512;--header-grad:linear-gradient(120deg,#2b0c10 0%,#4a0f18 55%,#6b1a26 100%);}
+*{box-sizing:border-box;}html,body{margin:0;padding:0;}
+body{font-family:'Georgia','Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg-grad);color:var(--texto);min-height:100vh;transition:background .4s ease,color .4s ease;padding-bottom:60px;}
+.ornamento{position:fixed;opacity:.06;pointer-events:none;z-index:0;}
+[data-theme="dark"] .ornamento{opacity:.08;}
+.orn-1{top:-60px;right:-60px;width:260px;}.orn-2{bottom:-40px;left:-60px;width:220px;}
+header{position:relative;background:var(--header-grad);color:#fff;padding:52px 20px 90px;text-align:center;overflow:hidden;box-shadow:var(--sombra);}
+header::before{content:"";position:absolute;inset:0;background-image:radial-gradient(circle at 15% 20%,rgba(255,255,255,.08) 0,transparent 35%),radial-gradient(circle at 85% 75%,rgba(255,255,255,.07) 0,transparent 40%);}
+.estrela-topo{width:34px;height:34px;margin:0 auto 14px;opacity:.95;}
+header h1{margin:0 0 6px;font-size:clamp(1.6rem,4vw,2.4rem);letter-spacing:.5px;font-weight:600;position:relative;}
+header .subtitulo{font-size:1rem;color:var(--dourado-claro);letter-spacing:3px;text-transform:uppercase;margin-bottom:4px;position:relative;}
+header .versiculo{font-style:italic;color:rgba(255,255,255,.85);max-width:560px;margin:14px auto 0;font-size:.95rem;position:relative;}
+.linha-dourada{width:90px;height:3px;background:linear-gradient(90deg,transparent,var(--dourado),transparent);margin:18px auto 0;position:relative;}
+.painel-controles{max-width:980px;margin:-55px auto 30px;background:var(--card-bg);border-radius:var(--radius);box-shadow:var(--sombra);padding:22px 24px;position:relative;z-index:5;border:1px solid rgba(201,162,75,.25);}
+.linha-controles{display:flex;gap:14px;flex-wrap:wrap;align-items:center;}
+.campo-busca{flex:1 1 240px;position:relative;}
+.campo-busca input{width:100%;padding:12px 16px 12px 42px;border-radius:999px;border:1.5px solid rgba(122,31,43,.18);background:var(--azul-claro);color:var(--texto);font-size:.95rem;outline:none;transition:border .25s,box-shadow .25s;}
+.campo-busca input:focus{border-color:var(--dourado);box-shadow:0 0 0 3px rgba(201,162,75,.2);}
+.campo-busca .icone-busca{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;opacity:.55;}
+select{padding:11px 14px;border-radius:999px;border:1.5px solid rgba(122,31,43,.18);background:var(--azul-claro);color:var(--texto);font-size:.9rem;cursor:pointer;outline:none;}
+.botoes-acao{display:flex;gap:10px;flex-wrap:wrap;}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:10px 16px;border-radius:999px;border:none;background:var(--azul-mariano);color:#fff;font-size:.85rem;cursor:pointer;transition:transform .2s,box-shadow .2s;font-weight:500;}
+.btn:hover{transform:translateY(-2px);box-shadow:0 6px 14px rgba(122,31,43,.25);}
+.btn.dourado{background:linear-gradient(120deg,var(--dourado),#b8933f);color:#3a2c05;}
+.btn.outline{background:transparent;border:1.5px solid var(--azul-mariano-2);color:var(--azul-mariano-2);}
+[data-theme="dark"] .btn.outline{color:var(--azul-mariano);border-color:var(--azul-mariano);}
+.contagem-resultados{text-align:center;color:var(--texto-suave);font-size:.85rem;margin-top:14px;letter-spacing:.3px;}
+main{max-width:980px;margin:0 auto;padding:0 20px;position:relative;z-index:1;}
+.bloco-local{margin-bottom:46px;}
+.titulo-local{display:flex;align-items:center;gap:12px;margin:34px 0 20px;}
+.titulo-local h2{font-size:1.3rem;color:var(--azul-mariano);margin:0;font-weight:600;}
+.titulo-local .icone-igreja{width:26px;height:26px;flex-shrink:0;color:var(--dourado);}
+.titulo-local::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(201,162,75,.5),transparent);}
+.grade-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;}
+.card{background:var(--card-bg);border-radius:var(--radius);box-shadow:var(--sombra);padding:22px;border:1px solid rgba(201,162,75,.18);position:relative;overflow:hidden;transition:transform .25s ease,box-shadow .25s ease;}
+.card:hover{transform:translateY(-4px);box-shadow:0 16px 34px rgba(122,31,43,.18);}
+.card::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--azul-mariano),var(--dourado),var(--azul-mariano-2));}
+.card-data{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.card-data .dia-mes{font-size:1.6rem;font-weight:700;color:var(--azul-mariano);line-height:1;}
+.card-data .dia-semana{display:block;font-size:.72rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--dourado);margin-top:4px;font-weight:600;}
+.selo-mes{font-size:.68rem;color:var(--texto-suave);background:var(--azul-claro);padding:4px 10px;border-radius:999px;white-space:nowrap;}
+.celebracao{font-size:.85rem;color:var(--texto-suave);font-style:italic;margin-bottom:14px;padding-bottom:12px;border-bottom:1px dashed rgba(201,162,75,.35);}
+.horario-item{margin-bottom:14px;}.horario-item:last-child{margin-bottom:0;}
+.horario-cabecalho{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.badge-hora{background:var(--azul-mariano);color:#fff;font-weight:700;font-size:.85rem;padding:5px 12px;border-radius:999px;letter-spacing:.4px;}
+.lista-servidores{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;}
+.lista-servidores li{display:flex;align-items:center;gap:9px;font-size:.88rem;padding:6px 10px;background:var(--azul-claro);border-radius:10px;}
+.avatar-inicial{width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,var(--dourado),var(--azul-mariano-2));color:#fff;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0;}
+.nome-servidor{font-weight:600;color:var(--texto);}
+.funcao-servidor{color:var(--texto-suave);font-size:.76rem;}
+.a-definir .avatar-inicial{background:#b0b8c4;}
+.a-definir .nome-servidor{color:var(--texto-suave);font-style:italic;font-weight:500;}
+.evento-especial{background:var(--dourado-claro);color:#6b5417;padding:10px 12px;border-radius:10px;font-size:.85rem;font-weight:600;text-align:center;}
+[data-theme="dark"] .evento-especial{color:#e9d48f;}
+.card.oculto{display:none;}
+.destaque{background:rgba(201,162,75,.35);border-radius:3px;padding:0 2px;}
+footer{text-align:center;padding:40px 20px 10px;color:var(--texto-suave);font-size:.8rem;}
+footer .frase{font-style:italic;color:var(--azul-mariano-2);margin-bottom:8px;font-size:.9rem;}
+.toggle-tema{position:fixed;top:20px;right:20px;z-index:20;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.4);color:#fff;width:44px;height:44px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px);}
+@media print{.toggle-tema,.painel-controles,header .versiculo,.estrela-topo,.ornamento{display:none!important;}body{background:#fff!important;}header{background:#7a1f2b!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:20px;}.card{box-shadow:none;border:1px solid #ccc;break-inside:avoid;}.grade-cards{grid-template-columns:repeat(2,1fr);}main{max-width:100%;}}
+@media (max-width:560px){header{padding:40px 16px 80px;}.linha-controles{flex-direction:column;align-items:stretch;}.grade-cards{grid-template-columns:1fr;}}
+`;
+
+const JS_PAGINA_FINAL = `
+const DIAS_SEMANA = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+const MESES_ABREV = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+function diaSemanaDe(iso){ const d = new Date(iso+'T00:00:00'); return DIAS_SEMANA[d.getDay()]; }
+function mesAbrevDe(iso){ const d = new Date(iso+'T00:00:00'); return MESES_ABREV[d.getMonth()]; }
+function diaNumeroDe(iso){ const d = new Date(iso+'T00:00:00'); return d.getDate(); }
+function iniciais(nome){ if(!nome || nome.includes('DEFINIR')) return '?'; const p = nome.trim().split(/\\s+/).filter(Boolean); if(p.length===0) return '?'; if(p.length===1) return (p[0].substring(0,2)||'?').toUpperCase(); const pr = p[0].charAt(0)||''; const ul = p[p.length-1].charAt(0)||''; return (pr+ul).toUpperCase() || '?'; }
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function destacarTexto(texto, termo){ const seguro = escapeHtml(texto); if(!termo) return seguro; const regex = new RegExp('('+termo.replace(/[.*+?^\${}()|[\\]\\\\]/g,'\\\\$&')+')','ig'); return seguro.replace(regex, '<span class="destaque">$1</span>'); }
+const ICONE_IGREJA = '<svg class="icone-igreja" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 L12 6"/><path d="M9 4 L15 4"/><path d="M4 21 L4 11 L12 6 L20 11 L20 21 Z"/><path d="M9 21 L9 15 L15 15 L15 21"/><circle cx="12" cy="10.5" r="1.2" fill="currentColor" stroke="none"/></svg>';
+function renderizarServidor(s, termo){ const definir = (s.nome||'').includes('DEFINIR') || !s.nome; const nomeShow = definir ? 'A definir' : s.nome; return '<li class="'+(definir?'a-definir':'')+'"><span class="avatar-inicial">'+iniciais(s.nome)+'</span><span><span class="nome-servidor">'+destacarTexto(nomeShow, termo)+'</span><span class="funcao-servidor"> · '+escapeHtml(s.funcao||'')+'</span></span></li>'; }
+function renderizarCard(local, evento, termo){
+  const dia = diaNumeroDe(evento.data), diaSemana = diaSemanaDe(evento.data), mesAbrev = mesAbrevDe(evento.data);
+  const horariosHtml = evento.horarios.map(h => {
+    if(h.especial){ return '<div class="horario-item"><div class="horario-cabecalho"><span class="badge-hora">'+(h.hora||'--:--')+'</span></div><div class="evento-especial">✦ '+escapeHtml(h.especialTexto||'Evento especial')+'</div></div>'; }
+    const sv = h.servidores.map(s => renderizarServidor(s, termo)).join('');
+    return '<div class="horario-item"><div class="horario-cabecalho"><span class="badge-hora">'+(h.hora||'--:--')+'</span></div><ul class="lista-servidores">'+sv+'</ul></div>';
+  }).join('');
+  const celeb = evento.celebracao ? '<div class="celebracao">'+escapeHtml(evento.celebracao)+'</div>' : '';
+  const nomesBusca = evento.horarios.flatMap(h => (h.servidores||[]).map(s=>s.nome||'')).join(', ').toLowerCase();
+  const horas = evento.horarios.map(h => h.hora).join('|');
+  return '<div class="card" data-local="'+escapeHtml(local.nome)+'" data-dia="'+diaSemana+'" data-horas="'+horas+'" data-nomes="'+escapeHtml(nomesBusca)+'"><div class="card-data"><div><span class="dia-mes">'+dia+'</span><span class="dia-semana">'+(diaSemana||'—')+'</span></div><span class="selo-mes">'+mesAbrev+'</span></div>'+celeb+horariosHtml+'</div>';
+}
+function renderizarTudo(){
+  const container = document.getElementById('conteudo');
+  container.innerHTML = DADOS_LOCAIS.map(local => {
+    if(!local.eventos || local.eventos.length===0) return '';
+    return '<section class="bloco-local"><div class="titulo-local">'+ICONE_IGREJA+'<h2>'+escapeHtml(local.nome)+'</h2></div><div class="grade-cards">'+local.eventos.map(e => renderizarCard(local, e, '')).join('')+'</div></section>';
+  }).join('');
+}
+function popularFiltros(){
+  const selLocal = document.getElementById('filtroLocal');
+  DADOS_LOCAIS.forEach(l => { const opt = document.createElement('option'); opt.value = l.nome; opt.textContent = l.nome; selLocal.appendChild(opt); });
+  const dias = [...new Set(DADOS_LOCAIS.flatMap(l => l.eventos.map(e => diaSemanaDe(e.data))))];
+  const selDia = document.getElementById('filtroDia');
+  dias.forEach(d => { const opt = document.createElement('option'); opt.value = d; opt.textContent = d; selDia.appendChild(opt); });
+  const horarios = [...new Set(DADOS_LOCAIS.flatMap(l => l.eventos.flatMap(e => e.horarios.map(h => h.hora))))].sort();
+  const selHora = document.getElementById('filtroHorario');
+  horarios.forEach(h => { const opt = document.createElement('option'); opt.value = h; opt.textContent = h; selHora.appendChild(opt); });
+}
+function aplicarFiltros(){
+  const termo = document.getElementById('busca').value.trim().toLowerCase();
+  const local = document.getElementById('filtroLocal').value;
+  const dia = document.getElementById('filtroDia').value;
+  const horario = document.getElementById('filtroHorario').value;
+  const cards = document.querySelectorAll('.card');
+  let visiveis = 0;
+  cards.forEach(card => {
+    const nomes = card.getAttribute('data-nomes')||'';
+    const horas = (card.getAttribute('data-horas')||'').split('|');
+    const mostrar = (!termo || nomes.includes(termo)) && (local==='todos'||card.getAttribute('data-local')===local) && (dia==='todos'||card.getAttribute('data-dia')===dia) && (horario==='todos'||horas.includes(horario));
+    card.classList.toggle('oculto', !mostrar);
+    if(mostrar) visiveis++;
+  });
+  document.querySelectorAll('.bloco-local').forEach(sec => { const tem = [...sec.querySelectorAll('.card')].some(c=>!c.classList.contains('oculto')); sec.style.display = tem?'':'none'; });
+  document.getElementById('contagem').textContent = visiveis===0 ? 'Nenhuma celebração encontrada com esses filtros.' : visiveis+' celebração(ões) encontrada(s)';
+  if(termo){ document.querySelectorAll('.card:not(.oculto) .nome-servidor').forEach(el=>{ el.innerHTML = destacarTexto(el.textContent, termo); }); }
+  else{ document.querySelectorAll('.card .nome-servidor').forEach(el=>{ el.textContent = el.textContent; }); }
+}
+const ICONE_SOL = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5a1 1 0 011 1V7a1 1 0 11-2 0V5.5a1 1 0 011-1zm0 12a3.5 3.5 0 100-7 3.5 3.5 0 000 7zm7.5-4.5a1 1 0 011 1 1 1 0 01-1 1H18a1 1 0 110-2h1.5zM6 13a1 1 0 011 1 1 1 0 01-1 1H4.5a1 1 0 110-2H6zm11.03-5.53a1 1 0 011.42 0 1 1 0 010 1.42l-.71.7a1 1 0 11-1.41-1.4l.7-.72zM6.66 17.24a1 1 0 011.41 0 1 1 0 010 1.42l-.7.7a1 1 0 11-1.42-1.41l.71-.71zM12 17.5a1 1 0 011 1V20a1 1 0 11-2 0v-1.5a1 1 0 011-1zm5.03 1.24a1 1 0 011.42 1.41l-.71.71a1 1 0 01-1.41-1.42l.7-.7zM6.66 6.76a1 1 0 01-1.41-1.42l.7-.7a1 1 0 111.42 1.4l-.71.72z"/></svg>';
+const ICONE_LUA = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3a9 9 0 109 9c0-.46-.04-.92-.1-1.36a5.389 5.389 0 01-4.4 2.26 5.403 5.403 0 01-5.4-5.4c0-1.81.91-3.4 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>';
+document.getElementById('btnTema').addEventListener('click', () => {
+  const body = document.body; const novo = body.getAttribute('data-theme')==='light'?'dark':'light';
+  body.setAttribute('data-theme', novo);
+  document.getElementById('iconeTema').outerHTML = (novo==='dark'?ICONE_SOL:ICONE_LUA).replace('<svg ', '<svg id="iconeTema" ');
+});
+document.getElementById('busca').addEventListener('input', aplicarFiltros);
+document.getElementById('filtroLocal').addEventListener('change', aplicarFiltros);
+document.getElementById('filtroDia').addEventListener('change', aplicarFiltros);
+document.getElementById('filtroHorario').addEventListener('change', aplicarFiltros);
+document.getElementById('btnLimpar').addEventListener('click', () => { document.getElementById('busca').value=''; document.getElementById('filtroLocal').value='todos'; document.getElementById('filtroDia').value='todos'; document.getElementById('filtroHorario').value='todos'; aplicarFiltros(); });
+document.getElementById('btnImprimir').addEventListener('click', () => window.print());
+document.getElementById('btnPdf').addEventListener('click', () => window.print());
+renderizarTudo(); popularFiltros(); aplicarFiltros();
+`;
+
+document.getElementById('btnGerar').addEventListener('click', gerarPaginaFinal);
+
+/* ================= INICIALIZAÇÃO ================= */
+renderEditor();
+renderPreview();
+</script>
+</body>
+</html>
